@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException, status
 from tortoise import models
 from tortoise.contrib.fastapi import register_tortoise
 from models import *
@@ -57,7 +57,13 @@ async def email_verification(request: Request, token: str):
     if user and not user.is_verified:
         user.is_verified = True
         await user.save()
-        return templates.TemplateResponse("verification.html")
+        return templates.TemplateResponse("verification.html", {"request": request, "username" : user.username})
+
+    raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 @app.get("/")
 def index():
