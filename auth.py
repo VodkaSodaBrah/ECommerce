@@ -16,12 +16,11 @@ async def verify_token(token: str):
     try:
         payload = jwt.decode(token, config_credentials["SECRET"])
         user = await User.get(id = payload.get("id"))
-
-        except:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token",
-                headers={"WWW-Authenticate": "Bearer"}
-            )
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
     return user
