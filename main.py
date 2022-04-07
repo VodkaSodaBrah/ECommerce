@@ -10,6 +10,8 @@ from tortoise.signals import post_save
 from typing import List, Optional, Type
 from tortoise import BaseDBAsyncClient
 
+from emails import *
+
 # response classes
 
 from fastapi.responses import HTMLResponse
@@ -36,6 +38,7 @@ async def create_business(
 
         await business_pydantic.from_tortoise_orm(business_obj)
         # Send e-mail
+        await send_email([instance.email], instance)
 
 @app.post("/registration")
 async def user_registration(user: user_pydanticIn):

@@ -14,7 +14,7 @@ def get_hashed_password(password):
 
 async def verify_token(token: str):
     try:
-        payload = jwt.decode(token, config_credentials["SECRET"])
+        payload = jwt.decode(token, config_credentials["SECRET"], algorithm=['HS256'])
         user = await User.get(id = payload.get("id"))
     except:
         raise HTTPException(
