@@ -1,5 +1,5 @@
-from dotenv import dotenv_values
 import jwt
+from dotenv import dotenv_values
 from fastapi import (FastAPI, Depends, HTTPException, status)
 from models import (User, Business, Product, user_pydantic, user_pydanticIn, 
                     product_pydantic,product_pydanticIn, business_pydantic, 
@@ -18,11 +18,10 @@ def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-
 async def authenticate_user(username: str, password: str):
     user = await User.get(username = username)
 
-    if user  and verify_password(password, user.password):
+    if user and verify_password(password, user.password):
         return user
 
     return False

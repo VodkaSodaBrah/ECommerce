@@ -38,9 +38,6 @@ class Product(Model):
     offer_expiration_date = fields.DateField(default = datetime.utcnow)
     product_image = fields.CharField(max_length =200, null = False, default = "productDefault.jpg")
     date_published = fields.DatetimeField(default = datetime.utcnow)
-    # the value for percentage_discount will be computed and 
-    # added using storing user input in the routes
-
     business = fields.ForeignKeyField('models.Business', related_name='products')
 
 

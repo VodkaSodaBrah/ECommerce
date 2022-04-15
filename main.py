@@ -5,6 +5,7 @@ from models import (User, Business, Product, user_pydantic, user_pydanticIn,
                     product_pydantic,product_pydanticIn, business_pydantic, 
                     business_pydanticIn, user_pydanticOut)
 
+
 # signals
 from tortoise.signals import  post_save 
 from typing import List, Optional, Type
@@ -16,6 +17,7 @@ from starlette.requests import Request
 #authentication and authorization 
 import jwt
 from dotenv import dotenv_values
+from authentication import *
 from fastapi.security import (
     OAuth2PasswordBearer,
     OAuth2PasswordRequestForm
@@ -28,7 +30,6 @@ import math
 
 # user image uploads
 #  pip install python-multipart
-from fastapi import File, UploadFile
 import secrets
 # static files
 from fastapi.staticfiles import StaticFiles
@@ -44,6 +45,8 @@ from fastapi.responses import HTMLResponse
 
 config_credentials = dict(dotenv_values(".env"))
 
+# datetime
+from datetime import datetime
 
 app = FastAPI()
 
@@ -59,8 +62,6 @@ oath2_scheme = OAuth2PasswordBearer(tokenUrl = 'token')
 async def generate_token(request_form: OAuth2PasswordRequestForm = Depends()):
     token = await token_generator(request_form.username, request_form.password)
     return {'access_token' : token, 'token_type' : 'bearer'}
-
-
 
 # process signals here
 @post_save(User)
@@ -143,7 +144,6 @@ async def user_login(user: user_pydantic = Depends(get_current_user)):
                 }
             }
 
-
 @app.post("/products")
 async def add_new_product(product: product_pydanticIn, 
                             user: user_pydantic = Depends(get_current_user)):
@@ -224,7 +224,7 @@ async def create_upload_file(file: UploadFile = File(...),
 
     # pillow
     img = Image.open(generated_name)
-    img = img.resize(size = (200,200))
+    img = img.resize(size = (200, 200))
     img.save(generated_name)
 
     file.close()
@@ -295,7 +295,33 @@ async def create_upload_file(id: int, file: UploadFile = File(...),
     file_url = "localhost:8000" + generated_name[1:]
     return {"status": "ok", "filename": file_url}
 
+@app.put(".product/{id}")
+async def update_product(id: int, 
+                        update_info: product_pydanticIn,
+                        user: user_pydantic = Depends(get_current_user)):
+    
+    product = await Product.get(id = id)
+    business = await product.business
+    owner = await business.owner
 
+    update_info = update_info.dict(exclude_unset=True)
+    update_info["date_published"] = datetime.utcnow()
+
+    if user == owner and update_info["original_price"] > 0:
+        update_info["percentage_discount"] = ((update_info["original_price"] -
+        update_info["new_price"]) / update_info["original_price"]) * 100
+
+        product = await product.update_from_dict(update_info)
+        await product.save()
+        response = await product_pydantic.from_tortoise_orm(product)
+        return {"status": "ok", "data": response}
+    
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated to perform this action or invalid user input",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 register_tortoise(
